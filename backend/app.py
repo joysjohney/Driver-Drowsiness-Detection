@@ -85,6 +85,23 @@ detector = DrowsinessDetector()
 camera = None
 current_detection_results = {}
 
+# -------------------------------------------------------
+# Last Driver Session Snapshot
+# -------------------------------------------------------
+# Persists the most recent meaningful driver data so the
+# admin dashboard shows real history even after the driver
+# logs out and the camera stops.
+# Updated every frame while the driver is active.
+# Never wiped — always carries the last known values.
+_last_driver_snapshot = {
+    "drowsiness_score": 0,
+    "ear":         0.0,
+    "mar":         0.0,
+    "blink_count": 0,
+    "yawn_count":  0,
+    "alert_count": 0
+}
+
 # Thread lock to protect shared data
 lock = threading.Lock()
 
@@ -166,9 +183,23 @@ def generate_frames():
                 _fps_frame_times.pop(0)
             _current_fps = float(len(_fps_frame_times))
 
-        # Store latest results safely
+        # Store latest results safely + update persistent snapshot
         with lock:
             current_detection_results = detection_results
+
+            # Update last driver snapshot so admin sees history after logout
+            global _last_driver_snapshot
+            _eye   = detection_results.get("eye_data",   {})
+            _yawn  = detection_results.get("yawn_data",  {})
+            _alert = detection_results.get("alert_info", {})
+            _last_driver_snapshot = {
+                "drowsiness_score": _alert.get("drowsiness_score", _last_driver_snapshot["drowsiness_score"]),
+                "ear":         _eye.get("avg_ear",      _last_driver_snapshot["ear"]),
+                "mar":         _yawn.get("mar",         _last_driver_snapshot["mar"]),
+                "blink_count": _eye.get("blink_count",  _last_driver_snapshot["blink_count"]),
+                "yawn_count":  _yawn.get("yawn_count",  _last_driver_snapshot["yawn_count"]),
+                "alert_count": detector.alert_manager.get_total_alerts()
+            }
 
         # Encode frame as JPEG
         ret, buffer = cv2.imencode(".jpg", processed_frame)
@@ -317,28 +348,46 @@ def drowsiness_status():
 @app.route("/latest_driver_status")
 def latest_driver_status():
     """
-    Return current driver metrics for admin dashboard.
+    Return driver metrics for admin dashboard.
+
+    Merges live camera data (if driver is currently active) with
+    the persistent snapshot (last known values from the driver session).
+    This way the admin always sees real history even after the driver
+    logs out — blink_count, yawn_count, alerts all carry over.
     """
 
     if "role" not in session or session["role"] != "admin":
         return jsonify({"error": "Forbidden"}), 403
 
     with lock:
-        results = current_detection_results.copy()
+        results      = current_detection_results.copy()
+        snap         = _last_driver_snapshot.copy()
 
-    eye_data = results.get("eye_data", {})
-    yawn_data = results.get("yawn_data", {})
+    eye_data   = results.get("eye_data",   {})
+    yawn_data  = results.get("yawn_data",  {})
     alert_info = results.get("alert_info", {})
 
-    stats = detector.get_current_status()
+    # Use live value if camera is running, else fall back to snapshot
+    def live_or_snap(live_val, snap_key):
+        return live_val if live_val not in (None, 0, 0.0) or snap[snap_key] == 0 else snap[snap_key]
+
+    drowsiness_score = live_or_snap(alert_info.get("drowsiness_score"), "drowsiness_score")
+    ear              = live_or_snap(eye_data.get("avg_ear"),            "ear")
+    mar              = live_or_snap(yawn_data.get("mar"),               "mar")
+
+    # For cumulative counters always use whichever is HIGHER (live or snapshot)
+    # so the count never goes backwards when switching between sessions.
+    blink_count = max(eye_data.get("blink_count", 0),  snap["blink_count"])
+    yawn_count  = max(yawn_data.get("yawn_count",  0), snap["yawn_count"])
+    alert_count = max(detector.alert_manager.get_total_alerts(),        snap["alert_count"])
 
     return jsonify({
-        "drowsiness_score": alert_info.get("drowsiness_score", 0),
-        "ear": eye_data.get("avg_ear", 0),
-        "mar": yawn_data.get("mar", 0),
-        "blink_count": eye_data.get("blink_count", 0),
-        "yawn_count": yawn_data.get("yawn_count", 0),
-        "alert_count": stats["alert_stats"]["total_alerts"]
+        "drowsiness_score": drowsiness_score,
+        "ear":         ear,
+        "mar":         mar,
+        "blink_count": blink_count,
+        "yawn_count":  yawn_count,
+        "alert_count": alert_count
     })
 
 

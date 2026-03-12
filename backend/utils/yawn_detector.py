@@ -48,8 +48,8 @@ def euclidean_distance(point1, point2):
 class YawnDetector:
 
     def __init__(self,
-                 mar_threshold=0.55,
-                 consecutive_frames=20,
+                 mar_threshold=0.75,
+                 consecutive_frames=30,
                  use_inner_mouth=True,
                  debug=False):
         """
@@ -70,8 +70,8 @@ class YawnDetector:
             Print MAR values for debugging.
         """
 
-        self.MAR_THRESHOLD = mar_threshold        # 0.55 — requires clearly open mouth
-        self.CONSECUTIVE_FRAMES = consecutive_frames  # 20 frames @ 30fps = ~0.67s
+        self.MAR_THRESHOLD = mar_threshold        # 0.75 — requires VERY wide open mouth (real yawn)
+        self.CONSECUTIVE_FRAMES = consecutive_frames  # 30 frames @ 30fps = ~1.0s sustained
         self.use_inner_mouth = use_inner_mouth
         self.debug = debug
 

@@ -11,11 +11,14 @@ EAR Formula:
   LOW  EAR (~0.15) = eyes CLOSED
 
 ear_percent:
-  0%   = eyes fully OPEN   (not drowsy)
-  100% = eyes fully CLOSED (drowsy)
+  0%   = eyes open OR normal blink (≤15 frames) — never triggers drowsiness
+  1–99% = sustained closure building (16–59 frames)
+  100% = fully drowsy (≥60 frames, ~2.0s)
+
+  Normal blinks (3–15 frames) are completely ignored — ear_percent stays 0%
+  so a single blink never contributes to the drowsiness score.
 
 consecutive_frames = 60  → is_drowsy fires after ~2.0s at 30fps
-                           (was 20 = 0.67s, too sensitive / too fast)
 
 Author: Joys Johney
 ========================================================
@@ -103,16 +106,26 @@ class EyeTracker:
                 self.total_blinks += 1
             self.frame_counter = 0
 
-        # is_drowsy: eyes closed for >= 20 consecutive frames (~0.67s)
+        # is_drowsy: eyes closed for >= CONSECUTIVE_FRAMES consecutive frames (~2.0s)
         is_drowsy = self.frame_counter >= self.CONSECUTIVE_FRAMES
 
-        # ear_percent: closure percentage
-        #   EAR=0.38 (open)   → 0%   (not drowsy)
-        #   EAR=0.25 (thresh) → 57%  (borderline)
-        #   EAR=0.15 (closed) → 100% (fully closed)
-        ear_percent = int(max(0, min(100,
-            (self.EAR_OPEN - avg_ear) / (self.EAR_OPEN - self.EAR_CLOSED) * 100
-        )))
+        # ear_percent: closure percentage — ONLY counts sustained closure, NOT blinks.
+        # A normal blink lasts 3–15 frames; we ignore those so the score never spikes.
+        # ear_percent is only non-zero when eyes have been closed beyond the blink window (>15 frames).
+        # This prevents a single blink from triggering Warning/Alert.
+        #
+        #   frame_counter <= 15   → blink window, report 0% (eyes considered open)
+        #   frame_counter 16–59   → sustained closure building up, scale 0→79%
+        #   frame_counter >= 60   → fully drowsy, report 100%
+        BLINK_MAX_FRAMES = 15
+        if self.frame_counter <= BLINK_MAX_FRAMES:
+            # Normal blink or eyes open — not drowsy
+            ear_percent = 0
+        else:
+            # Sustained closure: map frames 16→60 to 0→100%
+            sustained = self.frame_counter - BLINK_MAX_FRAMES
+            max_sustained = self.CONSECUTIVE_FRAMES - BLINK_MAX_FRAMES  # 45 frames
+            ear_percent = int(min(100, (sustained / max_sustained) * 100))
 
         return {
             "left_ear":            float(round(left_ear,  3)),

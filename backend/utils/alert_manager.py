@@ -92,21 +92,16 @@ class AlertManager:
         else:
             eye_score = 0    # eyes open, driver alert
 
-        # ── MOUTH COMPONENT (0–30 pts) ───────────────────────────────────────
-        mp            = yawn_data.get("mar_percent",    0)
-        yawn_detected = yawn_data.get("yawn_detected",  False)
-        is_yawning    = yawn_data.get("is_yawning",     False)
+        # ── MOUTH COMPONENT (0–80 pts) ───────────────────────────────────────
+        # Real-life rule: only a CONFIRMED yawn (mouth open very wide AND
+        # held for 1 full second = 30 frames) triggers drowsiness.
+        # Slightly open mouth, talking, breathing = 0 score. No false alerts.
+        yawn_detected = yawn_data.get("yawn_detected", False)
 
-        if (yawn_detected and is_yawning) or mp >= 85:
-            yawn_score = 80   # sustained wide yawn → Alert alone 🔴
-        elif yawn_detected or mp >= 70:
-            yawn_score = 50   # confirmed yawn → Warning alone 🟡
-        elif mp >= 55:
-            yawn_score = 30   # clear yawn opening
-        elif mp >= 40:
-            yawn_score = 20 if is_yawning else 10
+        if yawn_detected:
+            yawn_score = 80   # confirmed real yawn → Alert 🔴
         else:
-            yawn_score = 0    # mouth closed
+            yawn_score = 0    # anything less = not a yawn, ignore
 
         # ── NO-FACE PENALTY (+15 pts) ────────────────────────────────────────
         face_penalty = 15 if no_face_detected else 0
