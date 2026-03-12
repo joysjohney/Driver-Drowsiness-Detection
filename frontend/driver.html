@@ -414,6 +414,45 @@
   var toastTimer    = null;
   var audioCtx      = null;
 
+  // ── Smooth % display for eye (drowsiness) and mouth (yawn) ──────────────
+  // Both use the same exponential ease: moves 18% of remaining gap per frame
+  // at 60fps so the number glides 1,2,3... instead of jumping on each poll.
+
+  var _eyeDisplay = 0,  _eyeTarget = 0,  _eyeRunning = false;
+  var _mthDisplay = 0,  _mthTarget = 0,  _mthRunning = false;
+
+  function _eyeStep() {
+    var diff = _eyeTarget - _eyeDisplay;
+    if (Math.abs(diff) < 0.5) { _eyeDisplay = _eyeTarget; _eyeRunning = false; }
+    else { _eyeDisplay += diff * 0.18; requestAnimationFrame(_eyeStep); }
+    var el = document.getElementById("drowsiness-value");
+    if (el) el.textContent = Math.round(_eyeDisplay) + "%";
+  }
+  function setSmoothEye(v) {
+    _eyeTarget = Math.max(0, Math.min(100, v));
+    if (!_eyeRunning) { _eyeRunning = true; requestAnimationFrame(_eyeStep); }
+  }
+
+  function _mthStep() {
+    var diff = _mthTarget - _mthDisplay;
+    if (Math.abs(diff) < 0.5) { _mthDisplay = _mthTarget; _mthRunning = false; }
+    else { _mthDisplay += diff * 0.18; requestAnimationFrame(_mthStep); }
+    var pctEl = document.getElementById("mouth-pct");
+    var bar   = document.getElementById("mouth-bar");
+    var p = Math.round(_mthDisplay);
+    if (pctEl) pctEl.textContent = p + "%";
+    if (bar) {
+      bar.style.width = p + "%";
+      bar.classList.remove("warn", "alert");
+      if      (p >= 70) bar.classList.add("alert");
+      else if (p >= 55) bar.classList.add("warn");
+    }
+  }
+  function setSmoothMouth(v) {
+    _mthTarget = Math.max(0, Math.min(100, v));
+    if (!_mthRunning) { _mthRunning = true; requestAnimationFrame(_mthStep); }
+  }
+
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") audioCtx.resume();
@@ -514,11 +553,11 @@
           (st === "Alert" ? "col-alert" : st === "Warning" ? "col-warning" : "col-normal");
       }
       if (statusIconEl)  statusIconEl.textContent  = st === "Alert" ? "😴" : st === "Warning" ? "😐" : "😊";
-      if (drowsinessEl)  drowsinessEl.textContent  = (data.drowsiness_score || 0) + "%";
+      setSmoothEye(ep);   // smooth real-time eye % display
       if (fpsEl)         fpsEl.textContent         = data.fps || "—";
 
       if (eyeBar   && eyePctEl)   updateBar(eyeBar,   eyePctEl,   ep, 55, 75);
-      if (mouthBar && mouthPctEl) updateBar(mouthBar, mouthPctEl, mp, 55, 75);
+      setSmoothMouth(mp);  // smooth real-time mouth/yawn % display
 
       if (data.trigger_toast) { showToast(); alarmPlaying = false; }
       if (data.trigger_audio) {

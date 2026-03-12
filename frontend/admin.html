@@ -639,27 +639,71 @@
     toastTimer = setTimeout(() => sendToast.classList.remove("show"), 3000);
   });
 
-  /* ── Live metrics ── */
-  /* running avg computed from timeline scores */
+  /* ── Smooth metric interpolation ───────────────────────────────────────────
+     Each value has a _display (what's shown) and a _target (latest from API).
+     A requestAnimationFrame loop moves display → target at 18% per frame (60fps)
+     so numbers flow like a river: 0.22 → 0.23 → 0.24 … never jumping.
+  ── */
   let _timelineScores = [];
+
+  const _smooth = {
+    drowsiness: { display: 0, target: 0, running: false,
+      el: () => document.getElementById("current-drowsiness"),
+      fmt: v => Math.round(v) + "%" },
+    ear: { display: 0, target: 0, running: false,
+      el: () => document.getElementById("current-ear"),
+      fmt: v => v.toFixed(2) },
+    mar: { display: 0, target: 0, running: false,
+      el: () => document.getElementById("current-mar"),
+      fmt: v => v.toFixed(2) },
+    avg: { display: 0, target: 0, running: false,
+      el: () => document.getElementById("avg-drowsiness"),
+      fmt: v => Math.round(v) + "%" }
+  };
+
+  function _runSmooth(key) {
+    const s = _smooth[key];
+    const diff = s.target - s.display;
+    if (Math.abs(diff) < 0.005) {
+      s.display = s.target;
+      s.running = false;
+    } else {
+      s.display += diff * 0.18;
+      requestAnimationFrame(() => _runSmooth(key));
+    }
+    const el = s.el();
+    if (el) el.textContent = s.fmt(s.display);
+  }
+
+  function _setSmooth(key, newVal) {
+    const s = _smooth[key];
+    s.target = newVal;
+    if (!s.running) {
+      s.running = true;
+      requestAnimationFrame(() => _runSmooth(key));
+    }
+  }
 
   async function fetchLatestDriverStatus() {
     try {
       const res = await fetch("/latest_driver_status", { credentials: "include" });
       if (!res.ok) return;
       const d = await res.json();
-      document.getElementById("current-drowsiness").textContent = (d.drowsiness_score || 0) + "%";
-      document.getElementById("current-ear").textContent        = (d.ear   || 0).toFixed(2);
-      document.getElementById("current-mar").textContent        = (d.mar   || 0).toFixed(2);
-      document.getElementById("current-blinks").textContent     = d.blink_count  || 0;
-      document.getElementById("current-yawns").textContent      = d.yawn_count   || 0;
-      document.getElementById("total-alerts").textContent       = d.alert_count  || 0;
 
-      /* avg drowsiness = mean of all timeline scores collected so far */
+      // Smooth-animate the 3 main cards
+      _setSmooth("drowsiness", d.drowsiness_score || 0);
+      _setSmooth("ear",        d.ear   || 0);
+      _setSmooth("mar",        d.mar   || 0);
+
+      // Blinks, Yawns, Alerts — integer counters, snap directly (no need to smooth)
+      document.getElementById("current-blinks").textContent = d.blink_count || 0;
+      document.getElementById("current-yawns").textContent  = d.yawn_count  || 0;
+      document.getElementById("total-alerts").textContent   = d.alert_count || 0;
+
+      // Avg drowsiness — smooth animate
       if (_timelineScores.length > 0) {
         const sum = _timelineScores.reduce((a, b) => a + b, 0);
-        const avg = Math.round(sum / _timelineScores.length);
-        document.getElementById("avg-drowsiness").textContent = avg + "%";
+        _setSmooth("avg", sum / _timelineScores.length);
       }
     } catch {}
   }
