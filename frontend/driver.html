@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrowsyGuard - Driver</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%; width: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    background: #000;
+  }
+
+  .driver-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 12px;
+    gap: 10px;
+    background: #000;
+  }
+
+  /* ══ HEADER ══ */
+  .driver-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    padding: 11px 20px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 100;
+  }
+  .driver-header h1 {
+    font-size: 28px; font-weight: 800;        /* was 25px */
+    cursor: pointer; display: flex; align-items: center; gap: 4px;
+    user-select: none;
+  }
+  .brand-drowsy { color: #fff; }
+  .brand-guard  { color: #28a745; }
+  .brand-mode {
+    color: #666; font-size: 15px; font-weight: 400;  /* was 14px */
+    margin-left: 8px; background: #222;
+    padding: 2px 10px; border-radius: 20px; border: 1px solid #333;
+  }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .hdr-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 7px;
+    border: 1px solid #333; background: #222;
+    color: #ccc; font-size: 16px; font-weight: 500;  /* was 15px */
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    position: relative; z-index: 101;
+  }
+  .hdr-btn:hover { background: #2a2a2a; border-color: #444; color: #fff; }
+  .badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 7px;
+    border: 1px solid #1a3a1a; background: rgba(40,167,69,0.1);
+    color: #5cb85c; font-size: 16px; font-weight: 500;  /* was 15px */
+  }
+  .badge-dot {
+    width: 7px; height: 7px; background: #28a745;
+    border-radius: 50%; animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%    { opacity:0.5; transform:scale(1.3); }
+  }
+  .logout-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 7px;
+    border: 1px solid #333; background: #222;
+    color: #ccc; font-size: 16px; font-weight: 500;  /* was 15px */
+    cursor: pointer; transition: all 0.2s;
+    position: relative; z-index: 101;
+  }
+  .logout-btn:hover { background: #2a2a2a; color: #fff; }
+
+  /* ══ MAIN ROW ══ */
+  .main-row {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ── LEFT 70% ── */
+  .left-column {
+    flex: 0 0 calc(70% - 5px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .video-card {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* Video */
+  .video-container {
+    flex: 1;
+    background: #0d0d0d;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .video-stream {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    display: flex;
+    background: #111;
+    border-top: 1px solid #2a2a2a;
+    flex-shrink: 0;
+  }
+  .status-item {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px;
+    border-right: 1px solid #2a2a2a;
+  }
+  .status-item:last-child { border-right: none; }
+  .s-icon  { font-size: 26px; line-height: 1; flex-shrink: 0; }  /* was 22px */
+  .s-label {
+    font-size: 14px; color: #666; font-weight: 600;               /* was 13px #555 */
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
+  }
+  .s-value { font-size: 26px; font-weight: 800; color: #fff; }    /* was 22px */
+  .col-normal  { color: #28a745 !important; }
+  .col-warning { color: #ffc107 !important; }
+  .col-alert   { color: #dc3545 !important; }
+
+  /* ── Sensor bars ── */
+  .sensor-panel {
+    background: #0f0f0f;
+    border-top: 1px solid #222;
+    padding: 12px 18px;
+    border-radius: 0 0 16px 16px;
+    flex-shrink: 0;
+  }
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .sensor-block { display: flex; flex-direction: column; gap: 5px; }
+  .sensor-top   { display: flex; justify-content: space-between; align-items: baseline; }
+  .sensor-name  {
+    font-size: 15px; color: #666; font-weight: 700;               /* was 13px #555 */
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .sensor-pct   {
+    font-size: 28px; font-weight: 900; color: #fff;                /* was 24px */
+    font-variant-numeric: tabular-nums;
+  }
+  .sensor-bar-bg {
+    height: 9px; background: #222; border-radius: 5px;            /* was 7px */
+    overflow: hidden; border: 1px solid #2a2a2a;
+  }
+  .sensor-bar {
+    height: 100%; width: 0%; border-radius: 5px;
+    background: #28a745;
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+  .sensor-bar.warn  { background: #ffc107; }
+  .sensor-bar.alert { background: #dc3545; }
+  .sensor-hint {
+    font-size: 13px; color: #484848; text-align: right;            /* was 12px #383838 */
+  }
+
+  /* ── RIGHT 30% ── */
+  .right-column {
+    flex: 0 0 calc(30% - 5px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Profile card */
+  .profile-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 15px 17px;
+    flex-shrink: 0;
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 11px;
+    margin-bottom: 12px; padding-bottom: 12px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .card-avatar {
+    width: 38px; height: 38px; background: #28a745;               /* was 34px */
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; font-size: 22px; flex-shrink: 0;     /* was 19px */
+    box-shadow: 0 2px 8px rgba(40,167,69,0.3);
+  }
+  .card-header h4 {
+    font-size: 18px; font-weight: 700; color: #fff;               /* was 15px */
+  }
+  .profile-details { display: flex; flex-direction: column; gap: 9px; }
+  .profile-row {
+    display: flex; justify-content: space-between;
+    align-items: center; font-size: 17px;                         /* was 15px */
+  }
+  .profile-row strong { color: #666; font-weight: 600; }          /* was #555 500 */
+  .profile-row span   { color: #ddd; font-weight: 500; text-align: right; } /* was #ccc */
+
+  /* Messages card */
+  .messages-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 15px 17px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .messages-card h3 {
+    font-size: 18px; font-weight: 700; color: #fff;               /* was 15px */
+    margin-bottom: 11px; padding-bottom: 11px;
+    border-bottom: 1px solid #2a2a2a;
+    display: flex; align-items: center; gap: 7px;
+    flex-shrink: 0;
+  }
+  .msg-list {
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .no-msg {
+    font-size: 15px; color: #555; text-align: center; padding: 16px 0; /* was 14px #444 */
+  }
+  .msg-item {
+    background: #222; border: 1px solid #2a2a2a;
+    border-radius: 9px; padding: 10px 12px;
+    font-size: 17px; color: #ddd; line-height: 1.55;              /* was 15px */
+  }
+  .msg-item strong {
+    color: #3ecf5e; font-size: 13px; display: block; margin-bottom: 4px; /* was 13px #28a745 */
+    font-weight: 600; letter-spacing: 0.2px;
+  }
+
+  /* ══ TOAST ══ */
+  .toast-alert {
+    position: fixed; top: 24px; right: 24px;
+    background: #1a1a1a;
+    border: 2px solid #dc3545;
+    border-top: 5px solid #dc3545;
+    border-radius: 16px; padding: 32px 36px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px; text-align: center;
+    box-shadow: 0 12px 60px rgba(220,53,69,0.55), 0 0 0 1px rgba(220,53,69,0.15);
+    transform: translateY(-140px); opacity: 0; pointer-events: none;
+    transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    z-index: 9999; max-width: 720px; min-width: 480px;
+  }
+  .toast-alert.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .toast-icon { font-size: 62px; animation: shake 0.5s ease infinite; line-height: 1; }
+  @keyframes shake {
+    0%,100%{ transform:rotate(0); }
+    25%    { transform:rotate(-12deg); }
+    75%    { transform:rotate(12deg); }
+  }
+  .toast-body { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .toast-title  { font-size: 34px; font-weight: 800; color: #ff4d4d; letter-spacing: 0.5px; }
+  .toast-reason { font-size: 28px; color: #aaa; line-height: 1.4; }
+  .toast-sub    {
+    font-size: 24px; font-weight: 700; color: #fff;
+    background: #dc3545; border-radius: 10px;
+    padding: 10px 28px; margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+  .toast-close {
+    position: absolute; top: 14px; right: 14px;
+    background: #222; border: 1px solid #444; color: #888;
+    width: 42px; height: 42px; border-radius: 8px;
+    cursor: pointer; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .toast-close:hover { background: #dc3545; border-color: #dc3545; color: #fff; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="driver-container">
+
+  <!-- HEADER -->
+  <div class="driver-header">
+    <h1 onclick="location.reload()" title="Refresh">
+      <span class="brand-drowsy">Drowsy</span><span class="brand-guard">Guard</span>
+      <span class="brand-mode">Driver Mode</span>
+    </h1>
+    <div class="header-right">
+      <button id="audioEnableBtn" class="hdr-btn">🔇 Enable Audio</button>
+      <button id="testSoundBtn"   class="hdr-btn">🎵 Test</button>
+      <div class="badge"><div class="badge-dot"></div>Live</div>
+      <button class="logout-btn" id="profileBtn">👤 Profile</button>
+      <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- MAIN ROW -->
+  <div class="main-row">
+
+    <!-- LEFT 70% -->
+    <div class="left-column">
+      <div class="video-card">
+
+        <div class="video-container">
+          <img id="video-feed" src="/video_feed" alt="Live Feed" class="video-stream">
+        </div>
+
+        <!-- Status bar -->
+        <div class="status-bar">
+          <div class="status-item">
+            <div class="s-icon" id="status-icon">😊</div>
+            <div>
+              <div class="s-label">Status</div>
+              <div class="s-value col-normal" id="status-value">Normal</div>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="s-icon">📊</div>
+            <div>
+              <div class="s-label">Drowsiness</div>
+              <div class="s-value" id="drowsiness-value">0%</div>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="s-icon">⏱️</div>
+            <div>
+              <div class="s-label">Session</div>
+              <div class="s-value" id="session-time">00:00</div>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="s-icon">⚡</div>
+            <div>
+              <div class="s-label">FPS</div>
+              <div class="s-value" id="fps-value">—</div>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+    <!-- RIGHT 30% -->
+    <div class="right-column">
+
+      <div class="profile-card">
+        <div class="card-header">
+          <div class="card-avatar">👤</div>
+          <h4>Driver Profile</h4>
+        </div>
+        <div id="profile-details" class="profile-details">
+          <div class="no-msg">Loading…</div>
+        </div>
+      </div>
+
+      <div class="messages-card">
+        <h3>📢 Admin Messages</h3>
+        <div class="msg-list" id="feedback-content">
+          <div class="no-msg">No messages yet</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toastAlert" class="toast-alert">
+  <button class="toast-close" id="toastCloseBtn">✕</button>
+  <div class="toast-body">
+    <div class="toast-title">⚠ DROWSINESS WARNING!</div>
+    <div class="toast-sub">🛑 Please Stop &amp; Take Rest</div>
+  </div>
+</div>
+
+<audio id="alert-sound" preload="auto" src="assets/alert-sound.wav"></audio>
+
+<script>
+  var BASE = window.location.origin;
+
+  var audioEnabled  = false;
+  var alarmPlaying  = false;
+  var toastTimer    = null;
+  var audioCtx      = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playBeep(freq, dur, vol) {
+    try {
+      var ctx  = getAudioCtx();
+      var osc  = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq || 880, ctx.currentTime);
+      gain.gain.setValueAtTime(vol  || 0.8, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (dur || 0.6));
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime  + (dur || 0.6));
+    } catch(e) { console.warn("playBeep:", e); }
+  }
+
+  function playAlert() {
+    try {
+      var snd = document.getElementById("alert-sound");
+      var ok  = snd && snd.readyState >= 2 && !snd.error;
+      if (ok) {
+        snd.currentTime = 0;
+        snd.play().catch(function() { beepPattern(); });
+      } else { beepPattern(); }
+    } catch(e) { beepPattern(); }
+  }
+
+  function beepPattern() {
+    playBeep(880, 0.3, 0.9);
+    setTimeout(function(){ playBeep(660, 0.3, 0.9); }, 350);
+    setTimeout(function(){ playBeep(880, 0.3, 0.9); }, 700);
+  }
+
+  /* Toast */
+  function showToast() {
+    var toastEl = document.getElementById("toastAlert");
+    if (toastEl) toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 3000);
+    if (audioEnabled) playAlert();
+  }
+  function hideToast() {
+    var toastEl = document.getElementById("toastAlert");
+    if (toastEl) toastEl.classList.remove("show");
+    clearTimeout(toastTimer);
+  }
+
+  /* Sensor bars */
+  function updateBar(bar, label, pct, warnAt, alertAt) {
+    var p = Math.max(0, Math.min(100, pct || 0));
+    bar.style.width = p + "%";
+    label.textContent = p + "%";
+    bar.classList.remove("warn", "alert");
+    if      (p >= alertAt) bar.classList.add("alert");
+    else if (p >= warnAt)  bar.classList.add("warn");
+  }
+
+  /* Session timer */
+  var t0 = Date.now();
+  function updateSessionTime() {
+    var sessionTimeEl = document.getElementById("session-time");
+    if (!sessionTimeEl) return;
+    var e = Math.floor((Date.now() - t0) / 1000);
+    sessionTimeEl.textContent =
+      String(Math.floor(e / 60)).padStart(2, "0") + ":" +
+      String(e % 60).padStart(2, "0");
+  }
+
+  /* Status poll */
+  async function fetchStatus() {
+    try {
+      var res = await fetch(BASE + "/drowsiness_status", { credentials: "include" });
+      if (res.status === 401) { console.warn('401 on drowsiness_status'); return; }
+      if (!res.ok) return;
+      var data = await res.json();
+      var m  = data.metrics || {};
+      var st = data.status  || "Normal";
+      var ep = m.ear_percent != null ? m.ear_percent : 0;
+      var mp = m.mar_percent != null ? m.mar_percent : 0;
+
+      var statusValueEl = document.getElementById("status-value");
+      var statusIconEl  = document.getElementById("status-icon");
+      var drowsinessEl  = document.getElementById("drowsiness-value");
+      var fpsEl         = document.getElementById("fps-value");
+      var eyeBar        = document.getElementById("eye-bar");
+      var eyePctEl      = document.getElementById("eye-pct");
+      var mouthBar      = document.getElementById("mouth-bar");
+      var mouthPctEl    = document.getElementById("mouth-pct");
+
+      if (statusValueEl) {
+        statusValueEl.textContent = st;
+        statusValueEl.className   = "s-value " +
+          (st === "Alert" ? "col-alert" : st === "Warning" ? "col-warning" : "col-normal");
+      }
+      if (statusIconEl)  statusIconEl.textContent  = st === "Alert" ? "😴" : st === "Warning" ? "😐" : "😊";
+      if (drowsinessEl)  drowsinessEl.textContent  = (data.drowsiness_score || 0) + "%";
+      if (fpsEl)         fpsEl.textContent         = data.fps || "—";
+
+      if (eyeBar   && eyePctEl)   updateBar(eyeBar,   eyePctEl,   ep, 55, 75);
+      if (mouthBar && mouthPctEl) updateBar(mouthBar, mouthPctEl, mp, 55, 75);
+
+      if (data.trigger_toast) { showToast(); alarmPlaying = false; }
+      if (data.trigger_audio) {
+        if (audioEnabled && !alarmPlaying) { alarmPlaying = true; playAlert(); }
+      } else { alarmPlaying = false; }
+    } catch(e) { console.warn("fetchStatus:", e); }
+  }
+
+  function formatTimestamp(raw) {
+    if (!raw) return "";
+    var m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2})/);
+    if (!m) return raw;
+    var year = parseInt(m[1]), month = parseInt(m[2]) - 1, day = parseInt(m[3]);
+    var hour = parseInt(m[4]),  min   = parseInt(m[5]);
+    var d = new Date(year, month, day, hour, min);
+    var monthName = d.toLocaleString("en-GB", { month: "long" });
+    var ampm = hour >= 12 ? "pm" : "am";
+    var h12  = hour % 12 || 12;
+    var mm   = String(min).padStart(2, "0");
+    return day + " " + monthName + " " + year + " " + h12 + ":" + mm + " " + ampm;
+  }
+
+  async function fetchFeedback() {
+    try {
+      var res = await fetch(BASE + "/api/feedback", { credentials: "include" });
+      if (!res.ok) return;
+      var msgs = await res.json();
+      var feedbackContent = document.getElementById("feedback-content");
+      if (!feedbackContent) return;
+      feedbackContent.innerHTML = msgs.length === 0
+        ? '<div class="no-msg">No messages yet</div>'
+        : msgs.map(function(m) {
+            return '<div class="msg-item"><strong>' + formatTimestamp(m.timestamp) + '</strong>' + (m.message || "") + '</div>';
+          }).join("");
+    } catch(e) {}
+  }
+
+  async function fetchProfile() {
+    try {
+      var res = await fetch(BASE + "/auth/current_user", { credentials: "include" });
+      if (!res.ok) return;
+      var d = await res.json();
+      var profileDetails = document.getElementById("profile-details");
+      if (!profileDetails) return;
+      profileDetails.innerHTML =
+        '<div class="profile-row"><strong>Name</strong><span>'    + (d.fullname       || "—") + '</span></div>' +
+        '<div class="profile-row"><strong>Email</strong><span>'   + (d.email          || "—") + '</span></div>' +
+        '<div class="profile-row"><strong>Mobile</strong><span>'  + (d.mobile_number  || "—") + '</span></div>' +
+        '<div class="profile-row"><strong>Vehicle</strong><span>' + (d.vehicle_number || "—") + '</span></div>';
+    } catch(e) {}
+  }
+
+  async function logout() {
+    await fetch("/auth/logout", { method: "POST", credentials: "include" });
+    location.href = "/login.html";
+  }
+
+  /* Wire up header buttons safely after DOM loads */
+  document.addEventListener("DOMContentLoaded", function() {
+    var audioEnableBtn = document.getElementById("audioEnableBtn");
+    var testSoundBtn   = document.getElementById("testSoundBtn");
+
+    if (audioEnableBtn) {
+      audioEnableBtn.addEventListener("click", function() {
+        try {
+          getAudioCtx();
+          audioEnabled = true;
+          audioEnableBtn.innerHTML = "🔊 Audio On";
+          audioEnableBtn.style.color = "#28a745";
+          audioEnableBtn.style.borderColor = "#28a745";
+          playBeep(660, 0.2, 0.5);
+        } catch(e) {
+          audioEnableBtn.innerHTML = "❌ Try Again";
+          console.warn("Audio enable failed:", e);
+        }
+      });
+    }
+
+    if (testSoundBtn) {
+      testSoundBtn.addEventListener("click", function() {
+        if (!audioEnabled) { alert("Enable audio first"); return; }
+        playAlert();
+      });
+    }
+
+    var profileBtn    = document.getElementById("profileBtn");
+    var logoutBtn     = document.getElementById("logoutBtn");
+    var toastCloseBtn = document.getElementById("toastCloseBtn");
+    if (profileBtn)    profileBtn.addEventListener("click",    function() { window.location.href = "/profile.html"; });
+    if (logoutBtn)     logoutBtn.addEventListener("click",     logout);
+    if (toastCloseBtn) toastCloseBtn.addEventListener("click", hideToast);
+
+    setInterval(updateSessionTime, 1000);
+    setInterval(fetchStatus,        500);
+    setInterval(fetchFeedback,     3000);
+    fetchStatus(); fetchFeedback(); fetchProfile();
+  });
+</script>
+</body>
+</html>

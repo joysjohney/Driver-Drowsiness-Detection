@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrowsyGuard - Register</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #000;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .split-screen {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    padding: 20px;
+    gap: 20px;
+    overflow: hidden;
+  }
+
+  /* ── Left: 70%, image with curved edges ── */
+  .left-panel {
+    flex: 0 0 calc(70% - 10px);
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    border-radius: 20px;
+  }
+
+  .left-panel img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 20px;
+  }
+
+  .left-panel .placeholder-img {
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 16px;
+    gap: 10px;
+    border-radius: 20px;
+  }
+
+  .left-panel .placeholder-img svg {
+    opacity: 0.3;
+  }
+
+  /* ── Right: 30%, curved card same height ── */
+  .right-panel {
+    flex: 0 0 calc(30% - 10px);
+    height: 100%;
+    background: #1a1a1a;
+    border-radius: 20px;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid #2a2a2a;
+  }
+
+  /* Register container fills full height */
+  .register-container {
+    width: 100%;
+    background: transparent;
+    border-radius: 0;
+    padding: 32px 24px;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+  }
+
+  h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 22px;
+  }
+
+  .role-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .role-selector label {
+    cursor: pointer;
+    padding: 8px 22px;
+    border-radius: 30px;
+    border: 2px solid #333;
+    font-size: 16px;
+    font-weight: 500;
+    color: #888;
+    transition: all 0.25s;
+    user-select: none;
+  }
+
+  .role-selector label.selected {
+    background: #28a745;
+    color: #fff;
+    border-color: #28a745;
+  }
+
+  .role-selector input[type="radio"] {
+    display: none;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 5px;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #fff;
+    background: #222;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input::placeholder {
+    color: #555;
+  }
+
+  .form-group input:focus {
+    border-color: #28a745;
+  }
+
+  .form-group input.invalid {
+    border-color: #dc3545;
+  }
+
+  .form-group input.valid {
+    border-color: #28a745;
+  }
+
+  .error-text {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.2s;
+  }
+
+  .btn:hover { background: #218838; }
+  .btn:active { background: #1e7e34; }
+
+  .message {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    display: none;
+  }
+
+  .message.success {
+    display: block;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .message.error {
+    display: block;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  .auth-link {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 15px;
+    color: #888;
+  }
+
+  .auth-link a {
+    color: #28a745;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .auth-link a:hover { text-decoration: underline; }
+
+  @media (max-width: 680px) {
+    .split-screen { flex-direction: column; padding: 12px; gap: 12px; height: auto; overflow: auto; }
+    .left-panel { display: none; }
+    .right-panel { flex: none; width: 100%; height: auto; min-height: calc(100vh - 24px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="split-screen">
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <img src="assets/main.jpeg" alt="DrowsyGuard"
+         onerror="this.style.display='none'; document.getElementById('img-placeholder').style.display='flex';">
+    <div class="placeholder-img" id="img-placeholder" style="display:none;">
+      <svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span>DrowsyGuard</span>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="register-container">
+      <h2>Create Account</h2>
+
+      <!-- Role Selector -->
+      <div class="role-selector">
+        <label id="driver-label" class="selected">
+          <input type="radio" name="role" value="user" checked> Driver
+        </label>
+        <label id="admin-label">
+          <input type="radio" name="role" value="admin"> Admin
+        </label>
+      </div>
+
+      <!-- Form -->
+      <form id="registerForm" novalidate>
+
+        <div class="form-group">
+          <label for="fullname">Full Name</label>
+          <input type="text" id="fullname" placeholder="Enter your full name">
+          <div class="error-text" id="fullname-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="mobile">Mobile Number</label>
+          <input type="tel" id="mobile" placeholder="10-digit mobile number" maxlength="10">
+          <div class="error-text" id="mobile-error"></div>
+        </div>
+
+        <div class="form-group" id="vehicle-group">
+          <label for="vehicle">Vehicle Number</label>
+          <input type="text" id="vehicle" placeholder="e.g. KA01AB1234">
+          <div class="error-text" id="vehicle-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@example.com">
+          <div class="error-text" id="email-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Minimum 6 characters">
+          <div class="error-text" id="password-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirm-password">Confirm Password</label>
+          <input type="password" id="confirm-password" placeholder="Re-enter password">
+          <div class="error-text" id="confirm-error"></div>
+        </div>
+
+        <button type="submit" class="btn">Register</button>
+
+        <div class="auth-link">
+          Already have an account? <a href="/login.html">Login</a>
+        </div>
+
+      </form>
+
+      <div id="messageBox" class="message"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  /* ── Element references ── */
+  const form            = document.getElementById('registerForm');
+  const fullnameEl      = document.getElementById('fullname');
+  const mobileEl        = document.getElementById('mobile');
+  const vehicleEl       = document.getElementById('vehicle');
+  const emailEl         = document.getElementById('email');
+  const passwordEl      = document.getElementById('password');
+  const confirmEl       = document.getElementById('confirm-password');
+  const vehicleGroup    = document.getElementById('vehicle-group');
+  const messageBox      = document.getElementById('messageBox');
+  const driverLabel     = document.getElementById('driver-label');
+  const adminLabel      = document.getElementById('admin-label');
+
+  /* ── Utility: show/clear field error ── */
+  function setError(id, msg) {
+    const el = document.getElementById(id + '-error');
+    const inp = document.getElementById(id);
+    if (el) el.textContent = msg;
+    if (inp) {
+      inp.classList.toggle('invalid', !!msg);
+      inp.classList.toggle('valid', !msg && inp.value.trim() !== '');
+    }
+    return !msg; // returns true when valid
+  }
+
+  function clearAllErrors() {
+    ['fullname','mobile','vehicle','email','password','confirm'].forEach(id => {
+      const err = document.getElementById(id + '-error') || document.getElementById(id === 'confirm' ? 'confirm-error' : id + '-error');
+      if (err) err.textContent = '';
+      const inp = document.getElementById(id === 'confirm' ? 'confirm-password' : id);
+      if (inp) { inp.classList.remove('invalid','valid'); }
+    });
+  }
+
+  /* ── Role helpers ── */
+  function getRole() {
+    return document.querySelector('input[name="role"]:checked').value;
+  }
+
+  function applyRole(role) {
+    if (role === 'user') {
+      driverLabel.classList.add('selected');
+      adminLabel.classList.remove('selected');
+      vehicleGroup.style.display = 'block';
+    } else {
+      adminLabel.classList.add('selected');
+      driverLabel.classList.remove('selected');
+      vehicleGroup.style.display = 'none';
+    }
+  }
+
+  applyRole('user'); // default
+
+  /* ── Role radio change ── */
+  document.querySelectorAll('input[name="role"]').forEach(radio => {
+    radio.addEventListener('change', function () {
+      const chosen = this.value;
+      // Reset form fields but keep the chosen radio checked
+      form.reset();
+      document.querySelector(`input[name="role"][value="${chosen}"]`).checked = true;
+      clearAllErrors();
+      messageBox.className = 'message';
+      messageBox.textContent = '';
+      applyRole(chosen);
+    });
+  });
+
+  /* ── Force mobile: digits only ── */
+  mobileEl.addEventListener('keypress', function(e) {
+    if (!/[0-9]/.test(e.key)) e.preventDefault();
+  });
+  mobileEl.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+  });
+
+  /* ── Force vehicle: uppercase ── */
+  vehicleEl.addEventListener('input', function() {
+    const pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(pos, pos);
+  });
+
+  /* ── Individual validators (return true = valid) ── */
+  function validateFullname() {
+    const v = fullnameEl.value.trim();
+    if (!v)           return setError('fullname', 'Full name is required');
+    if (v.length < 3) return setError('fullname', 'Minimum 3 characters');
+    if (!/^[A-Za-z ]+$/.test(v)) return setError('fullname', 'Only letters and spaces allowed');
+    return setError('fullname', '');
+  }
+
+  function validateMobile() {
+    const v = mobileEl.value.trim();
+    if (!v)                        return setError('mobile', 'Mobile number is required');
+    if (!/^[6-9][0-9]{9}$/.test(v)) return setError('mobile', 'Enter a valid 10-digit Indian mobile number');
+    return setError('mobile', '');
+  }
+
+  function validateEmail() {
+    const v = emailEl.value.trim();
+    if (!v) return setError('email', 'Email is required');
+    if (!/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/.test(v))
+      return setError('email', 'Enter a valid email address');
+    return setError('email', '');
+  }
+
+  function validatePassword() {
+    const v = passwordEl.value;
+    if (!v)          return setError('password', 'Password is required');
+    if (v.length < 6) return setError('password', 'Minimum 6 characters required');
+    return setError('password', '');
+  }
+
+  function validateConfirm() {
+    const v = confirmEl.value;
+    if (!v)                          return setError('confirm', 'Please confirm your password');
+    if (v !== passwordEl.value)      return setError('confirm', 'Passwords do not match');
+    return setError('confirm', '');
+  }
+
+  function validateVehicle() {
+    if (getRole() === 'admin') return true; // not required for admin
+    const raw = vehicleEl.value.trim().toUpperCase().replace(/[\s\-]/g, '');
+    if (!raw) return setError('vehicle', 'Vehicle number is required');
+    const modern = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}$/;
+    const old    = /^[A-Z]{2}[0-9]{4,7}$/;
+    if (!modern.test(raw) && !old.test(raw))
+      return setError('vehicle', 'Enter a valid vehicle number (e.g. KA01AB1234)');
+    return setError('vehicle', '');
+  }
+
+  /* ── Real-time listeners ── */
+  fullnameEl.addEventListener('input',  validateFullname);
+  fullnameEl.addEventListener('blur',   validateFullname);
+  mobileEl.addEventListener('input',   validateMobile);
+  mobileEl.addEventListener('blur',    validateMobile);
+  emailEl.addEventListener('input',    validateEmail);
+  emailEl.addEventListener('blur',     validateEmail);
+  passwordEl.addEventListener('input', function() { validatePassword(); if (confirmEl.value) validateConfirm(); });
+  passwordEl.addEventListener('blur',  validatePassword);
+  confirmEl.addEventListener('input',  validateConfirm);
+  confirmEl.addEventListener('blur',   validateConfirm);
+  vehicleEl.addEventListener('input',  validateVehicle);
+  vehicleEl.addEventListener('blur',   validateVehicle);
+
+  /* ── Submit ── */
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    // Run all validations and collect results
+    const results = [
+      validateFullname(),
+      validateMobile(),
+      validateEmail(),
+      validatePassword(),
+      validateConfirm(),
+      validateVehicle()
+    ];
+
+    if (results.includes(false)) return; // stop if any invalid
+
+    const role = getRole();
+
+    const payload = {
+      fullname:       fullnameEl.value.trim(),
+      mobile:         mobileEl.value.trim(),
+      email:          emailEl.value.trim(),
+      password:       passwordEl.value,
+      role:           role
+    };
+    if (role === 'user') {
+      payload.vehicle_number = vehicleEl.value.trim().toUpperCase();
+    }
+
+    // Disable button while submitting
+    const btn = form.querySelector('.btn');
+    btn.disabled = true;
+    btn.textContent = 'Registering…';
+
+    try {
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        messageBox.textContent = '✅ Registration successful! Redirecting to login…';
+        messageBox.className = 'message success';
+        form.reset();
+        document.querySelector('input[name="role"][value="user"]').checked = true;
+        applyRole('user');
+        clearAllErrors();
+        setTimeout(() => { window.location.href = '/login.html'; }, 2000);
+      } else {
+        const errMsg = data.error || 'Registration failed. Please try again.';
+
+        // Route duplicate-field errors to the correct input
+        if (errMsg.toLowerCase().includes('email')) {
+          setError('email', errMsg);
+          emailEl.focus();
+        } else if (errMsg.toLowerCase().includes('mobile')) {
+          setError('mobile', errMsg);
+          mobileEl.focus();
+        } else {
+          messageBox.textContent = errMsg;
+          messageBox.className = 'message error';
+        }
+      }
+    } catch (err) {
+      messageBox.textContent = '⚠️ Network error. Please check your connection and try again.';
+      messageBox.className = 'message error';
+      console.error('Registration error:', err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Register';
+    }
+  });
+
+});
+</script>
+</body>
+</html>

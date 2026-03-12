@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrowsyGuard - Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    
+    font-family: 'Segoe UI', sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+  }
+
+  .admin-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  /* ══════════════════════════════
+     HEADER
+  ══════════════════════════════ */
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #141414;
+    border: 1px solid #242424;
+    border-radius: 14px;
+    padding: 9px 18px;
+    flex-shrink: 0;
+  }
+
+  .admin-header h1 {
+    font-size: 25px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+  }
+
+  .brand-drowsy { color: #fff; }
+  .brand-guard  { color: #28a745; }
+
+  .brand-mode {
+    color: #555;
+    font-size: 16px;
+    font-weight: 500;
+    margin-left: 8px;
+    background: #1e1e1e;
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid #2e2e2e;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 7px; }
+
+  .hdr-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #2e2e2e;
+    background: #1e1e1e;
+    color: #aaa;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .hdr-btn:hover { background: #252525; border-color: #3a3a3a; color: #fff; }
+
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(40,167,69,0.3);
+    background: rgba(40,167,69,0.08);
+    color: #4caf6e;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: #28a745;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(1.4); }
+  }
+
+  /* ══════════════════════════════
+     MAIN ROW
+  ══════════════════════════════ */
+  .main-row {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ──────────────────────────────
+     LEFT 40%
+  ────────────────────────────── */
+  .left-col {
+    flex: 0 0 40%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  /* ── Section label (used in left col) ── */
+  .sec-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+  }
+
+  .sec-label .sec-icon {
+    width: 22px; height: 22px;
+    background: rgba(40,167,69,0.15);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .sec-label .sec-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .sec-label .sec-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, #2a2a2a, transparent);
+  }
+
+  /* Video — 70% */
+  .video-wrap {
+    flex: 7;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+  }
+
+  .video-card {
+    flex: 1;
+    background: #0d0d0d;
+    border: 1px solid #222;
+    border-radius: 16px;
+    
+    position: relative;
+    min-height: 0;
+  }
+
+  .video-stream {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .live-pill {
+    position: absolute;
+    top: 10px; left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(6px);
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    background: #dc3545;
+    border-radius: 50%;
+    animation: pulse 1.2s infinite;
+  }
+
+  /* Message — 30% */
+  .message-wrap {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+  }
+
+  .message-card {
+    flex: 1;
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 16px;
+    padding: 10px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-height: 0;
+  }
+
+  .message-card textarea {
+    flex: 1;
+    width: 100%;
+    background: #1e1e1e;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #ddd;
+    resize: none;
+    font-size: 16px;
+    font-family: 'Segoe UI', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 0;
+  }
+  .message-card textarea::placeholder { color: #444; }
+  .message-card textarea:focus { border-color: #28a745; }
+
+  .msg-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .send-toast {
+    font-size: 15px;
+    font-weight: 600;
+    color: #4caf6e;
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .send-toast.show { opacity: 1; transform: translateY(0); }
+  .send-toast.err  { color: #ff6b6b; }
+
+  .send-btn {
+    background: #28a745;
+    border: none;
+    border-radius: 7px;
+    padding: 6px 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Segoe UI', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .send-btn:hover  { background: #218838; }
+  .send-btn:active { background: #1e7e34; }
+
+  /* ──────────────────────────────
+     RIGHT 60%
+     grid-template-rows: 6fr 4fr
+       → top panel  = 60% (7 cards)
+       → chart panel = 40%
+  ────────────────────────────── */
+  .right-col {
+    flex: 1;
+    display: grid;
+    grid-template-rows: 6fr 4fr;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  /* ── Panels (shared shell) ── */
+  .panel {
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  /* chart panel must propagate height down to canvas */
+  .chart-panel {
+    min-height: 100px;
+  }
+
+  /* ── Panel heading ── */
+  .panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .panel-heading .ph-icon {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .ph-icon.green { background: rgba(40,167,69,0.15); }
+  .ph-icon.blue  { background: rgba(59,130,246,0.15); }
+
+  .panel-heading .ph-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .ph-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e0e0e0;
+    line-height: 1;
+  }
+
+  .ph-sub {
+    font-size: 16px;
+    color: #555;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .panel-heading .ph-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, #2a2a2a, transparent);
+  }
+
+  .ph-badge {
+    font-size: 16px;
+    font-weight: 600;
+    color: #4caf6e;
+    background: rgba(40,167,69,0.1);
+    border: 1px solid rgba(40,167,69,0.2);
+    border-radius: 20px;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+
+  /* ── Cards area inside top panel ── */
+  .cards-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  /* row of 3 */
+  .card-row-3 {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    min-height: 0;
+  }
+
+  /* 2×2 grid */
+  .card-grid-2x2 {
+    flex: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  /* ── Metric card ── */
+  .metric-card {
+    background: #1a1a1a;
+    border: 1px solid #252525;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 6px;
+    gap: 4px;
+    transition: border-color 0.2s, background 0.2s;
+    min-height: 0;
+  }
+  .metric-card:hover { background: #1e1e1e; border-color: rgba(40,167,69,0.3); }
+
+  .metric-card .m-icon  { font-size: 19px; line-height: 1; }
+
+  .metric-card .m-label {
+    font-size: 15px;
+    color: #555;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .metric-card .m-value {
+    font-size: 23px;
+    font-weight: 800;
+    color: #28a745;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  /* top row cards get slightly larger value text */
+  .card-row-3 .metric-card .m-value { font-size: 25px; }
+
+  /* ── Chart panel ── */
+  .chart-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+    display: block;
+  }
+
+  .chart-wrap canvas {
+    display: block;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="admin-container">
+
+  <!-- ══ HEADER ══ -->
+  <div class="admin-header">
+    <h1 onclick="location.reload()" title="Click to refresh">
+      <span class="brand-drowsy">Drowsy</span><span class="brand-guard">Guard</span>
+      <span class="brand-mode">Admin Mode</span>
+    </h1>
+    <div class="header-right">
+      <div class="badge"><div class="badge-dot"></div>Live</div>
+      <button class="hdr-btn" onclick="window.location.href='/user-management.html'">👥 Manage Drivers</button>
+      <button class="hdr-btn" onclick="window.location.href='/admin-profile.html'">👤 Profile</button>
+      <button class="hdr-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ROW ══ -->
+  <div class="main-row">
+
+    <!-- ────── LEFT 40% ────── -->
+    <div class="left-col">
+
+      <!-- Video section -->
+      <div class="video-wrap">
+        <div class="sec-label">
+          <span class="sec-icon">📹</span>
+          <span class="sec-title">Live Camera</span>
+          <span class="sec-line"></span>
+        </div>
+        <div class="video-card">
+          <img src="/video_feed" alt="Live Camera Feed" class="video-stream">
+          <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+        </div>
+      </div>
+
+      <!-- Message section -->
+      <div class="message-wrap">
+        <div class="sec-label">
+          <span class="sec-icon">📢</span>
+          <span class="sec-title">Message Driver</span>
+          <span class="sec-line"></span>
+        </div>
+        <div class="message-card">
+          <textarea id="feedback-input" maxlength="200" placeholder="Type a message to send to the driver…"></textarea>
+          <div class="msg-footer">
+            <span class="send-toast" id="send-toast"></span>
+            <button class="send-btn" id="send-feedback-btn">📨 Send Message</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ────── RIGHT 60% ────── -->
+    <div class="right-col">
+
+      <!-- TOP PANEL — 60% — 7 metric cards -->
+      <div class="panel">
+        <div class="panel-heading">
+          <div class="ph-icon green">📊</div>
+          <div class="ph-text">
+            <div class="ph-title">Driver Metrics</div>
+            <div class="ph-sub">Real-time detection data</div>
+          </div>
+          <div class="ph-line"></div>
+          <span class="ph-badge">● Live</span>
+        </div>
+
+        <div class="cards-area">
+
+          <!-- Row of 3 -->
+          <div class="card-row-3">
+            <div class="metric-card">
+              <div class="m-icon">😴</div>
+              <div class="m-label">Drowsiness</div>
+              <div class="m-value" id="current-drowsiness">0%</div>
+            </div>
+            <div class="metric-card">
+              <div class="m-icon">👁️</div>
+              <div class="m-label">EAR</div>
+              <div class="m-value" id="current-ear">0.00</div>
+            </div>
+            <div class="metric-card">
+              <div class="m-icon">😮</div>
+              <div class="m-label">MAR</div>
+              <div class="m-value" id="current-mar">0.00</div>
+            </div>
+          </div>
+
+          <!-- 2×2 grid -->
+          <div class="card-grid-2x2">
+            <div class="metric-card">
+              <div class="m-icon">👁️‍🗨️</div>
+              <div class="m-label">Blinks</div>
+              <div class="m-value" id="current-blinks">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="m-icon">🥱</div>
+              <div class="m-label">Yawns</div>
+              <div class="m-value" id="current-yawns">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="m-icon">🚨</div>
+              <div class="m-label">Total Alerts</div>
+              <div class="m-value" id="total-alerts">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="m-icon">📉</div>
+              <div class="m-label">Avg Drowsiness</div>
+              <div class="m-value" id="avg-drowsiness">0%</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- BOTTOM PANEL — 40% — Timeline chart -->
+      <div class="panel chart-panel">
+        <div class="panel-heading">
+          <div class="ph-icon blue">📈</div>
+          <div class="ph-text">
+            <div class="ph-title">Drowsiness Timeline</div>
+            <div class="ph-sub">Last 60 seconds</div>
+          </div>
+          <div class="ph-line"></div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="drowsiness-chart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  async function logout() {
+    await fetch("/auth/logout", { method: "POST" });
+    window.location.href = "/login.html";
+  }
+
+  /* ── Send message ── */
+  const sendToast = document.getElementById("send-toast");
+  let toastTimer;
+
+  document.getElementById("send-feedback-btn").addEventListener("click", async () => {
+    const msg = document.getElementById("feedback-input").value.trim();
+    if (!msg) return;
+    try {
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ message: msg })
+      });
+      document.getElementById("feedback-input").value = "";
+      sendToast.textContent = "✅ Message sent";
+      sendToast.classList.remove("err");
+    } catch {
+      sendToast.textContent = "❌ Failed to send";
+      sendToast.classList.add("err");
+    }
+    sendToast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => sendToast.classList.remove("show"), 3000);
+  });
+
+  /* ── Live metrics ── */
+  /* running avg computed from timeline scores */
+  let _timelineScores = [];
+
+  async function fetchLatestDriverStatus() {
+    try {
+      const res = await fetch("/latest_driver_status", { credentials: "include" });
+      if (!res.ok) return;
+      const d = await res.json();
+      document.getElementById("current-drowsiness").textContent = (d.drowsiness_score || 0) + "%";
+      document.getElementById("current-ear").textContent        = (d.ear   || 0).toFixed(2);
+      document.getElementById("current-mar").textContent        = (d.mar   || 0).toFixed(2);
+      document.getElementById("current-blinks").textContent     = d.blink_count  || 0;
+      document.getElementById("current-yawns").textContent      = d.yawn_count   || 0;
+      document.getElementById("total-alerts").textContent       = d.alert_count  || 0;
+
+      /* avg drowsiness = mean of all timeline scores collected so far */
+      if (_timelineScores.length > 0) {
+        const sum = _timelineScores.reduce((a, b) => a + b, 0);
+        const avg = Math.round(sum / _timelineScores.length);
+        document.getElementById("avg-drowsiness").textContent = avg + "%";
+      }
+    } catch {}
+  }
+  setInterval(fetchLatestDriverStatus, 500);
+  fetchLatestDriverStatus();
+
+  /* ── Chart ── init immediately on load with empty data, update as data arrives ── */
+  let drowsinessChart = null;
+
+  function createChart() {
+    const canvas = document.getElementById("drowsiness-chart");
+    if (!canvas) return;
+    if (drowsinessChart) { drowsinessChart.destroy(); drowsinessChart = null; }
+    drowsinessChart = new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [{
+          label: "Drowsiness Score",
+          data: [],
+          borderColor: "#28a745",
+          backgroundColor: "rgba(40,167,69,0.10)",
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0 },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            ticks: { color: "#555", font: { size: 10 }, maxTicksLimit: 8, maxRotation: 0 },
+            grid:  { color: "#1e1e1e" }
+          },
+          y: {
+            min: 0, max: 100,
+            ticks: { color: "#555", font: { size: 10 } },
+            grid:  { color: "#1e1e1e" }
+          }
+        }
+      }
+    });
+  }
+
+  /* Create chart as soon as DOM is ready — canvas has real dimensions by then */
+  document.addEventListener("DOMContentLoaded", () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => createChart()));
+  });
+
+  async function fetchTimeline() {
+    try {
+      const res = await fetch("/timeline", { credentials: "include" });
+      if (!res.ok) return;
+      const raw = await res.json();
+
+      const labels = raw.map(d => d.time);
+      const scores = raw.map(d => d.score);
+      _timelineScores = scores;
+
+      if (!drowsinessChart) {
+        /* chart not ready yet — create it now */
+        createChart();
+      }
+
+      /* push data into chart */
+      drowsinessChart.data.labels          = labels;
+      drowsinessChart.data.datasets[0].data = scores;
+      drowsinessChart.update("none");
+
+    } catch(e) { console.error("Timeline fetch error:", e); }
+  }
+  setInterval(fetchTimeline, 1000);
+  fetchTimeline();
+</script>
+</body>
+</html>

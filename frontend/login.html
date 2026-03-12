@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrowsyGuard - Login</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #000;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .split-screen {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    padding: 20px;
+    gap: 20px;
+    overflow: hidden;
+  }
+
+  /* ── Left: 70%, image with curved edges ── */
+  .left-panel {
+    flex: 0 0 calc(70% - 10px);
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    border-radius: 20px;
+  }
+
+  .left-panel img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 20px;
+  }
+
+  .left-panel .placeholder-img {
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 16px;
+    gap: 10px;
+    border-radius: 20px;
+  }
+
+  .left-panel .placeholder-img svg {
+    opacity: 0.3;
+  }
+
+  /* ── Right: 30%, curved card same height ── */
+  .right-panel {
+    flex: 0 0 calc(30% - 10px);
+    height: 100%;
+    background: #1a1a1a;
+    border-radius: 20px;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid #2a2a2a;
+  }
+
+  /* Login container fills full height */
+  .login-container {
+    width: 100%;
+    background: transparent;
+    padding: 32px 24px;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+  }
+
+  /* ── App name hero ── */
+  .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .brand-icon {
+    width: 68px;
+    height: 68px;
+    background: #28a745;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 28px rgba(40,167,69,0.4);
+  }
+
+  .brand-icon svg {
+    width: 36px;
+    height: 36px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 1.8;
+  }
+
+  .brand-name {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .brand-name .drowsy {
+    color: #fff;
+  }
+
+  .brand-name .guard {
+    color: #28a745;
+  }
+
+  .brand-sub {
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+    margin-top: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: 19px;
+    font-weight: 600;
+    color: #bbb;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 6px;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    stroke: #555;
+    fill: none;
+    stroke-width: 1.8;
+    pointer-events: none;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 11px 13px 11px 38px;
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #fff;
+    background: #222;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .form-group input::placeholder {
+    color: #555;
+  }
+
+  .form-group input:focus {
+    border-color: #28a745;
+    background: #252525;
+  }
+
+  .form-group input.invalid {
+    border-color: #dc3545;
+  }
+
+  .error-text {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  /* Forgot password */
+  .forgot-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -8px;
+    margin-bottom: 22px;
+  }
+
+  .forgot-row a {
+    font-size: 14px;
+    color: #28a745;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .forgot-row a:hover { text-decoration: underline; }
+
+  .btn {
+    width: 100%;
+    padding: 12px;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn:hover  { background: #218838; }
+  .btn:active { background: #1e7e34; }
+  .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+  /* Spinner */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .message {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    display: none;
+  }
+
+  .message.success {
+    display: block;
+    background: rgba(40,167,69,0.15);
+    color: #5cb85c;
+    border: 1px solid rgba(40,167,69,0.3);
+  }
+
+  .message.error {
+    display: block;
+    background: rgba(220,53,69,0.15);
+    color: #e07070;
+    border: 1px solid rgba(220,53,69,0.3);
+  }
+
+  .auth-link {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 15px;
+    color: #666;
+  }
+
+  .auth-link a {
+    color: #28a745;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .auth-link a:hover { text-decoration: underline; }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 22px 0;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #2a2a2a;
+  }
+
+  .divider span {
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 680px) {
+    .split-screen { flex-direction: column; padding: 12px; gap: 12px; height: auto; overflow: auto; }
+    .left-panel { display: none; }
+    .right-panel { flex: none; width: 100%; height: auto; min-height: calc(100vh - 24px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="split-screen">
+
+  <!-- Left Panel: Image -->
+  <div class="left-panel">
+    <img src="assets/main.jpeg" alt="DrowsyGuard"
+         onerror="this.style.display='none'; document.getElementById('img-placeholder').style.display='flex';">
+    <div class="placeholder-img" id="img-placeholder" style="display:none;">
+      <svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span>DrowsyGuard</span>
+    </div>
+  </div>
+
+  <!-- Right Panel: Login Form -->
+  <div class="right-panel">
+    <div class="login-container">
+
+      <!-- Brand -->
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <div class="brand-name">
+          <span class="drowsy">Drowsy</span><span class="guard">Guard</span>
+        </div>
+        <div class="brand-sub">Driver Safety System</div>
+      </div>
+
+      <h2>Welcome back</h2>
+      <p class="subtitle">Sign in to your account to continue</p>
+
+      <!-- Login Form -->
+      <form id="loginForm" autocomplete="off" novalidate>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="M2 7l10 7 10-7"/>
+            </svg>
+            <input type="email" id="email" placeholder="you@example.com" autocomplete="off">
+          </div>
+          <div class="error-text" id="email-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <input type="password" id="password" placeholder="Enter your password" autocomplete="new-password">
+          </div>
+          <div class="error-text" id="password-error"></div>
+        </div>
+
+        <div class="forgot-row">
+          <a href="#">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn" id="loginBtn">
+          <span id="btnText">Sign In</span>
+          <div class="spinner" id="spinner"></div>
+        </button>
+
+      </form>
+
+      <div id="messageBox" class="message"></div>
+
+      <div class="divider"><span>New to DrowsyGuard?</span></div>
+
+      <div class="auth-link">
+        Don't have an account? <a href="/register.html">Create one</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('load', function () {
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const emailEl    = document.getElementById('email');
+  const passwordEl = document.getElementById('password');
+  const messageBox = document.getElementById('messageBox');
+  const loginBtn   = document.getElementById('loginBtn');
+  const btnText    = document.getElementById('btnText');
+  const spinner    = document.getElementById('spinner');
+
+  function setError(id, msg) {
+    const errEl = document.getElementById(id + '-error');
+    const inp   = document.getElementById(id);
+    if (errEl) errEl.textContent = msg;
+    if (inp)   inp.classList.toggle('invalid', !!msg);
+    return !msg;
+  }
+
+  function validateEmail() {
+    const v = emailEl.value.trim();
+    if (!v) return setError('email', 'Email is required');
+    if (!/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/.test(v))
+      return setError('email', 'Enter a valid email address');
+    return setError('email', '');
+  }
+
+  function validatePassword() {
+    const v = passwordEl.value;
+    if (!v)           return setError('password', 'Password is required');
+    if (v.length < 6) return setError('password', 'Minimum 6 characters');
+    return setError('password', '');
+  }
+
+  emailEl.addEventListener('input', validateEmail);
+  emailEl.addEventListener('blur',  validateEmail);
+  passwordEl.addEventListener('input', validatePassword);
+  passwordEl.addEventListener('blur',  validatePassword);
+
+  document.getElementById('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const valid = validateEmail() & validatePassword();
+    if (!valid) return;
+
+    // Show loading state
+    loginBtn.disabled = true;
+    btnText.textContent = 'Signing in…';
+    spinner.style.display = 'block';
+    messageBox.className = 'message';
+    messageBox.textContent = '';
+
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailEl.value.trim(),
+          password: passwordEl.value
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        messageBox.textContent = '✅ Login successful! Redirecting…';
+        messageBox.className = 'message success';
+        setTimeout(() => {
+          window.location.href = data.role === 'admin' ? '/' : '/driver';
+        }, 1200);
+      } else {
+        messageBox.textContent = data.error || 'Invalid email or password.';
+        messageBox.className = 'message error';
+      }
+    } catch (err) {
+      messageBox.textContent = '⚠️ Network error. Please try again.';
+      messageBox.className = 'message error';
+      console.error('Login error:', err);
+    } finally {
+      loginBtn.disabled = false;
+      btnText.textContent = 'Sign In';
+      spinner.style.display = 'none';
+    }
+  });
+});
+</script>
+</body>
+</html>

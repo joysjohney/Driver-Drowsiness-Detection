@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrowsyGuard · Manage Drivers</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    background: #000;
+  }
+
+  .split-screen {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* ── Centred card ── */
+  .right-panel {
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    max-height: calc(100vh - 40px);
+    background: #1a1a1a;
+    border-radius: 20px;
+    border: 1px solid #2a2a2a;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .profile-container {
+    width: 100%;
+    padding: 28px 28px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    justify-content: flex-start;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+  /* ── Brand ── */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-shrink: 0;
+  }
+
+  .brand-icon {
+    width: 48px; height: 48px;
+    background: #28a745;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 16px rgba(40,167,69,0.35);
+  }
+
+  .brand-name {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .brand-name .drowsy { color: #fff; }
+  .brand-name .guard  { color: #28a745; }
+
+  /* ── Page heading ── */
+  .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+
+  .page-sub {
+    font-size: 15px;
+    color: #555;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+
+  /* ── Loading / empty state ── */
+  .state-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    font-size: 16px;
+  }
+
+  /* ── Driver list (scrollable area) ── */
+  .drivers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ── Driver card ── */
+  .driver-card {
+    background: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .driver-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #28a745, #20c954);
+    border-radius: 16px 16px 0 0;
+  }
+  .driver-card:hover {
+    border-color: rgba(40,167,69,0.4);
+    box-shadow: 0 4px 24px rgba(40,167,69,0.1);
+  }
+
+  /* ── Card top header ── */
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid #2a2a2a;
+    margin-top: 4px;
+  }
+
+  .avatar-circle {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, #28a745, #20c954);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(40,167,69,0.3);
+  }
+
+  .card-header-info { flex: 1; min-width: 0; }
+
+  .card-driver-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-driver-badge {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #28a745;
+    background: rgba(40,167,69,0.12);
+    border: 1px solid rgba(40,167,69,0.25);
+    border-radius: 20px;
+    padding: 2px 9px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  /* ── Info fields inside card ── */
+  .card-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .field-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #141414;
+    border: 1px solid #252525;
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: border-color 0.15s;
+  }
+  .field-item:hover { border-color: #333; }
+
+  .field-item .fi-icon {
+    font-size: 17px;
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+  }
+
+  .field-item .fi-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .fi-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  .fi-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: #ccc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Card action buttons ── */
+  .card-divider {
+    height: 1px;
+    background: #252525;
+    margin-bottom: 14px;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 9px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .btn-edit {
+    background: rgba(40,167,69,0.08);
+    color: #28a745;
+    border: 1px solid rgba(40,167,69,0.25);
+  }
+  .btn-edit:hover { background: rgba(40,167,69,0.18); border-color: rgba(40,167,69,0.5); }
+
+  .btn-delete {
+    background: #1a1a1a;
+    color: #666;
+    border: 1px solid #2a2a2a;
+  }
+  .btn-delete:hover { background: rgba(220,53,69,0.1); color: #dc3545; border-color: rgba(220,53,69,0.4); }
+
+  /* ── Back button (top right of header) ── */
+  .header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-shrink: 0;
+  }
+
+  .btn-back {
+    background: #222;
+    color: #aaa;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Segoe UI', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-back:hover { background: #2a2a2a; color: #fff; border-color: #444; }
+
+  /* ══ MODAL ══ */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.78);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal.show { display: flex; }
+
+  .modal-content {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 20px;
+    padding: 28px;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+
+  .modal-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .modal-sub {
+    font-size: 15px;
+    color: #555;
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 6px;
+  }
+
+  .input-wrap { position: relative; }
+
+  .input-wrap .field-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 17px;
+    pointer-events: none;
+    line-height: 1;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px 13px 10px 36px;
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #fff;
+    background: #222;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .form-group input::placeholder { color: #555; }
+  .form-group input:focus { border-color: #28a745; background: #252525; }
+  .form-group input.invalid { border-color: #dc3545; }
+  .form-group input.valid   { border-color: #28a745; }
+  .form-group input[readonly] { color: #555; background: #181818; cursor: not-allowed; border-color: #252525; }
+
+  .error-text {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  .modal-divider { height: 1px; background: #2a2a2a; margin: 18px 0; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-save {
+    flex: 1;
+    padding: 11px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    background: #28a745;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'Segoe UI', sans-serif;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-save:hover    { background: #218838; }
+  .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .btn-cancel {
+    flex: 0 0 auto;
+    padding: 11px 18px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #222;
+    font-size: 16px;
+    font-weight: 600;
+    color: #aaa;
+    cursor: pointer;
+    font-family: 'Segoe UI', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover { background: #2a2a2a; color: #fff; border-color: #444; }
+
+  /* message */
+  .message { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 15px; display: none; }
+  .message.success { display: block; background: rgba(40,167,69,0.12); color: #5cb85c; border: 1px solid rgba(40,167,69,0.25); }
+  .message.error   { display: block; background: rgba(220,53,69,0.12); color: #e07070; border: 1px solid rgba(220,53,69,0.25); }
+
+  @media (max-width: 680px) {
+    .split-screen { padding: 12px; }
+    .right-panel { max-width: 100%; height: auto; min-height: calc(100vh - 24px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="split-screen">
+  <div class="right-panel">
+    <div class="profile-container">
+
+      <!-- Brand + Back -->
+      <div class="header-row">
+        <div class="brand" style="margin-bottom:0">
+          <div class="brand-icon">👁️</div>
+          <div class="brand-name">
+            <span class="drowsy">Drowsy</span><span class="guard">Guard</span>
+          </div>
+        </div>
+        <button class="btn-back" onclick="window.location.href='/admin'">← Back</button>
+      </div>
+
+      <div class="page-title">Manage Drivers</div>
+      <p class="page-sub">View, edit or remove registered drivers</p>
+
+      <!-- Driver list -->
+      <div id="driversList" class="drivers-list">
+        <div class="state-box">Loading drivers...</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="driverModal" class="modal">
+  <div class="modal-content">
+
+    <h2>✏️ Edit Driver</h2>
+    <p class="modal-sub">Update driver details below</p>
+
+    <input type="hidden" id="driverId">
+
+    <div class="form-group">
+      <label>Full Name</label>
+      <div class="input-wrap">
+        <span class="field-icon">✏️</span>
+        <input type="text" id="fullname" placeholder="e.g. John Doe">
+      </div>
+      <div class="error-text" id="fullnameError"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Mobile Number</label>
+      <div class="input-wrap">
+        <span class="field-icon">📱</span>
+        <input type="tel" id="mobile" placeholder="e.g. 9876543210" maxlength="10">
+      </div>
+      <div class="error-text" id="mobileError"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Email Address</label>
+      <div class="input-wrap">
+        <span class="field-icon">✉️</span>
+        <input type="email" id="email" readonly>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Vehicle Number</label>
+      <div class="input-wrap">
+        <span class="field-icon">🚗</span>
+        <input type="text" id="vehicle" placeholder="e.g. KL68A4612">
+      </div>
+      <div class="error-text" id="vehicleError"></div>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div class="modal-actions">
+      <button class="btn-save" id="saveBtn">💾 Save Changes</button>
+      <button class="btn-cancel" onclick="closeModal()">✕ Cancel</button>
+    </div>
+
+    <div id="modalMessage" class="message"></div>
+
+  </div>
+</div>
+
+<script>
+  const API_BASE_URL = window.location.origin;
+  let editingDriverId = null;
+  const saveBtn = document.getElementById('saveBtn');
+
+  window.addEventListener('load', loadDrivers);
+
+  /* ── Load all drivers ── */
+  async function loadDrivers() {
+    const list = document.getElementById('driversList');
+    list.innerHTML = '<div class="state-box">Loading drivers...</div>';
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href = '/login.html'; return; }
+
+      const users = await res.json();
+      const drivers = users.filter(u => u.role === 'user');
+
+      if (drivers.length === 0) {
+        list.innerHTML = '<div class="state-box">No drivers found</div>';
+        return;
+      }
+
+      drivers.sort((a, b) => a.id - b.id);
+
+      list.innerHTML = drivers.map(driver => `
+        <div class="driver-card" data-id="${driver.id}">
+
+          <div class="card-header">
+            <div class="avatar-circle">👤</div>
+            <div class="card-header-info">
+              <div class="card-driver-name">${driver.fullname || '—'}</div>
+              <span class="card-driver-badge">Driver</span>
+            </div>
+          </div>
+
+          <div class="card-fields">
+            <div class="field-item">
+              <span class="fi-icon">📱</span>
+              <div class="fi-content">
+                <span class="fi-label">Phone Number</span>
+                <span class="fi-value">${driver.mobile_number || '—'}</span>
+              </div>
+            </div>
+            <div class="field-item">
+              <span class="fi-icon">✉️</span>
+              <div class="fi-content">
+                <span class="fi-label">Email Address</span>
+                <span class="fi-value">${driver.email || '—'}</span>
+              </div>
+            </div>
+            <div class="field-item">
+              <span class="fi-icon">🚗</span>
+              <div class="fi-content">
+                <span class="fi-label">Vehicle Number</span>
+                <span class="fi-value">${driver.vehicle_number || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-divider"></div>
+
+          <div class="card-actions">
+            <button class="btn btn-edit"   onclick="editDriver(${driver.id})">✏️ Edit</button>
+            <button class="btn btn-delete" onclick="deleteDriver(${driver.id})">🗑️ Delete</button>
+          </div>
+
+        </div>
+      `).join('');
+
+    } catch (err) {
+      console.error(err);
+      list.innerHTML = '<div class="state-box">Error loading drivers</div>';
+    }
+  }
+
+  /* ── Open edit modal ── */
+  async function editDriver(driverId) {
+    editingDriverId = driverId;
+    clearErrors();
+    saveBtn.disabled = false;
+    saveBtn.textContent = '💾 Save Changes';
+    document.getElementById('modalMessage').className = 'message';
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${driverId}`, { credentials: 'include' });
+      const driver = await res.json();
+
+      document.getElementById('driverId').value  = driver.id;
+      document.getElementById('fullname').value  = driver.fullname       || '';
+      document.getElementById('mobile').value    = driver.mobile_number  || '';
+      document.getElementById('email').value     = driver.email          || '';
+      document.getElementById('vehicle').value   = driver.vehicle_number || '';
+
+      document.getElementById('driverModal').classList.add('show');
+    } catch { alert('Error loading driver'); }
+  }
+
+  function closeModal() {
+    document.getElementById('driverModal').classList.remove('show');
+  }
+
+  /* ── Save driver ── */
+  async function saveDriver() {
+    clearErrors();
+    const driverId = document.getElementById('driverId').value;
+    const fullname = document.getElementById('fullname').value.trim();
+    const mobile   = document.getElementById('mobile').value.trim();
+    const vehicle  = document.getElementById('vehicle').value.trim();
+
+    let valid = true;
+    if (!fullname) { document.getElementById('fullnameError').textContent = 'Full name is required'; valid = false; }
+    if (!mobile) {
+      document.getElementById('mobileError').textContent = 'Mobile number is required'; valid = false;
+    } else if (!/^[6-9][0-9]{9}$/.test(mobile.replace(/\s+/g,''))) {
+      document.getElementById('mobileError').textContent = 'Enter a valid 10-digit mobile number'; valid = false;
+    }
+    if (!vehicle) { document.getElementById('vehicleError').textContent = 'Vehicle number is required'; valid = false; }
+    if (!valid) return;
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${driverId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullname, mobile_number: mobile, vehicle_number: vehicle })
+      });
+
+      const msgBox = document.getElementById('modalMessage');
+      if (!res.ok) throw new Error();
+
+      msgBox.textContent = '✅ Driver updated successfully!';
+      msgBox.className = 'message success';
+      closeModal();
+      loadDrivers();
+    } catch {
+      const msgBox = document.getElementById('modalMessage');
+      msgBox.textContent = '⚠️ Error updating driver. Please try again.';
+      msgBox.className = 'message error';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Save Changes';
+    }
+  }
+
+  /* ── Delete driver ── */
+  async function deleteDriver(driverId) {
+    if (!confirm('Are you sure you want to delete this driver?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${driverId}`, {
+        method: 'DELETE', credentials: 'include'
+      });
+      if (!res.ok) throw new Error();
+      loadDrivers();
+    } catch { alert('Error deleting driver'); }
+  }
+
+  function clearErrors() {
+    ['fullnameError','mobileError','vehicleError'].forEach(id => {
+      document.getElementById(id).textContent = '';
+    });
+    ['fullname','mobile','vehicle'].forEach(id => {
+      document.getElementById(id).classList.remove('invalid','valid');
+    });
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', saveDriver);
+  document.getElementById('driverModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+</body>
+</html>

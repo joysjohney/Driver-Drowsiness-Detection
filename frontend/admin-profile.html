@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrowsyGuard · Admin Profile</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
+  .split-screen { display: flex; width: 100%; height: 100vh; padding: 20px; align-items: center; justify-content: center; overflow: hidden; }
+  .right-panel { width: 100%; max-width: 480px; height: calc(100vh - 40px); background: #1a1a1a; border-radius: 20px; border: 1px solid #2a2a2a; display: flex; align-items: stretch; overflow: hidden; }
+  .profile-container { width: 100%; padding: 36px 32px; display: flex; flex-direction: column; justify-content: center; overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .brand-icon { width: 48px; height: 48px; background: #28a745; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 2px 16px rgba(40,167,69,0.35); }
+  .brand-name { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .brand-name .drowsy { color: #fff; }
+  .brand-name .guard  { color: #28a745; }
+  .page-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: #555; margin-bottom: 24px; }
+  .avatar-row { display: flex; align-items: center; gap: 14px; background: #222; border: 1px solid #2a2a2a; border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; }
+  .avatar-circle { width: 52px; height: 52px; background: #28a745; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 14px rgba(40,167,69,0.35); }
+  .avatar-info { flex: 1; min-width: 0; }
+  .avatar-name { font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .avatar-role { display: inline-block; margin-top: 4px; font-size: 11px; font-weight: 600; color: #28a745; background: rgba(40,167,69,0.12); border: 1px solid rgba(40,167,69,0.25); border-radius: 20px; padding: 2px 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: #aaa; margin-bottom: 6px; }
+  .input-wrap { position: relative; }
+  .input-wrap .field-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; line-height: 1; }
+  .form-group input { width: 100%; padding: 10px 13px 10px 36px; border: 1.5px solid #333; border-radius: 8px; font-size: 14px; color: #fff; background: #222; outline: none; transition: border-color 0.2s; font-family: 'Segoe UI', sans-serif; }
+  .form-group input::placeholder { color: #555; }
+  .form-group input:focus  { border-color: #28a745; background: #252525; }
+  .form-group input.invalid { border-color: #dc3545; }
+  .form-group input.valid   { border-color: #28a745; }
+  .email-display { padding: 10px 13px 10px 36px; border: 1.5px solid #2a2a2a; border-radius: 8px; font-size: 14px; color: #666; background: #181818; cursor: not-allowed; }
+  .error-text { color: #dc3545; font-size: 12px; margin-top: 4px; min-height: 16px; }
+  .divider { height: 1px; background: #2a2a2a; margin: 18px 0; }
+  .button-group { display: flex; gap: 10px; }
+  .btn { flex: 1; padding: 11px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Segoe UI', sans-serif; }
+  .btn-save { background: #28a745; color: #fff; }
+  .btn-save:hover   { background: #218838; }
+  .btn-save:active  { background: #1e7e34; }
+  .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-back { background: #222; color: #aaa; border: 1px solid #333; flex: 0 0 auto; padding: 11px 18px; }
+  .btn-back:hover { background: #2a2a2a; color: #fff; border-color: #444; }
+  .message { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
+  .message.success { display: block; background: rgba(40,167,69,0.12); color: #5cb85c; border: 1px solid rgba(40,167,69,0.25); }
+  .message.error   { display: block; background: rgba(220,53,69,0.12); color: #e07070; border: 1px solid rgba(220,53,69,0.25); }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+  @media (max-width: 680px) {
+    .split-screen { padding: 12px; }
+    .right-panel { max-width: 100%; height: auto; min-height: calc(100vh - 24px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="split-screen">
+  <div class="right-panel">
+    <div class="profile-container">
+
+      <div class="brand">
+        <div class="brand-icon">👁️</div>
+        <div class="brand-name">
+          <span class="drowsy">Drowsy</span><span class="guard">Guard</span>
+        </div>
+      </div>
+
+      <div class="page-title">Admin Profile</div>
+      <p class="page-sub">Update your account details</p>
+
+      <div class="avatar-row">
+        <div class="avatar-circle">🛡️</div>
+        <div class="avatar-info">
+          <div class="avatar-name" id="avatar-name">Loading...</div>
+          <span class="avatar-role">Administrator</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <div class="input-wrap">
+          <span class="field-icon">✏️</span>
+          <input type="text" id="fullname" placeholder="e.g. Admin User">
+        </div>
+        <div class="error-text" id="nameError"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Mobile Number</label>
+        <div class="input-wrap">
+          <span class="field-icon">📱</span>
+          <input type="tel" id="mobile" placeholder="e.g. 9876543210" maxlength="10">
+        </div>
+        <div class="error-text" id="mobileError"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <div class="input-wrap">
+          <span class="field-icon">✉️</span>
+          <div class="email-display" id="email">——</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="button-group">
+        <button class="btn btn-save" id="saveBtn" onclick="saveProfile()">💾 Save Changes</button>
+        <button class="btn btn-back" onclick="goBack()">← Back</button>
+      </div>
+
+      <div id="messageBox" class="message"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+
+async function loadProfile() {
+  try {
+    const res = await fetch(API + "/auth/current_user", { credentials: "include" });
+    if (res.status === 401) { window.location = "/login.html"; return; }
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.role !== "admin") { window.location = "/driver"; return; }
+    document.getElementById("avatar-name").textContent = data.fullname      || "No name set";
+    document.getElementById("fullname").value          = data.fullname      || "";
+    document.getElementById("mobile").value            = data.mobile_number || "";
+    document.getElementById("email").textContent       = data.email         || "—";
+  } catch (err) { console.error("Error loading profile:", err); }
+}
+
+function validateName(v) {
+  if (!v) return "Full name is required";
+  if (!/^[A-Za-z ]{3,50}$/.test(v)) return "Only letters allowed (3–50 characters)";
+  return "";
+}
+
+function validateMobile(v) {
+  const c = v.replace(/\s+/g, "");
+  if (!c) return "Mobile number is required";
+  if (!/^[6-9][0-9]{9}$/.test(c)) return "Enter a valid 10-digit Indian mobile number";
+  return "";
+}
+
+function setFieldState(inputId, errorId, errMsg) {
+  const inp = document.getElementById(inputId);
+  const err = document.getElementById(errorId);
+  if (err) err.textContent = errMsg;
+  if (inp) {
+    inp.classList.toggle("invalid", !!errMsg);
+    inp.classList.toggle("valid",   !errMsg && inp.value.trim() !== "");
+  }
+}
+
+document.getElementById("fullname").addEventListener("input", () => {
+  setFieldState("fullname", "nameError", validateName(document.getElementById("fullname").value.trim()));
+});
+document.getElementById("mobile").addEventListener("input", function () {
+  this.value = this.value.replace(/[^0-9]/g, "");
+  setFieldState("mobile", "mobileError", validateMobile(this.value.trim()));
+});
+
+async function saveProfile() {
+  const fullname = document.getElementById("fullname").value.trim();
+  const mobile   = document.getElementById("mobile").value.trim();
+
+  const nameErr   = validateName(fullname);
+  const mobileErr = validateMobile(mobile);
+  setFieldState("fullname", "nameError",   nameErr);
+  setFieldState("mobile",   "mobileError", mobileErr);
+  if (nameErr || mobileErr) return;
+
+  const saveBtn = document.getElementById("saveBtn");
+  const msgBox  = document.getElementById("messageBox");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving…";
+  msgBox.className = "message";
+  msgBox.textContent = "";
+
+  try {
+    const res = await fetch(API + "/api/update_profile", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fullname, mobile_number: mobile })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      msgBox.textContent = "✅ Profile updated successfully!";
+      msgBox.className = "message success";
+      document.getElementById("avatar-name").textContent = fullname;
+    } else {
+      msgBox.textContent = data.error || "Update failed. Please try again.";
+      msgBox.className = "message error";
+    }
+  } catch (err) {
+    msgBox.textContent = "⚠️ Network error. Please try again.";
+    msgBox.className = "message error";
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "💾 Save Changes";
+  }
+}
+
+function goBack() { window.location = "/"; }
+
+loadProfile();
+</script>
+</body>
+</html>
