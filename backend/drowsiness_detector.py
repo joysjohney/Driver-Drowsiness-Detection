@@ -81,16 +81,28 @@ class DrowsinessDetector:
 
         self.frame_count = 0
 
-        # Toast: fires after sustained Alert for TOAST_ALERT_FRAMES consecutive frames
-        # Latched for TOAST_LATCH_SEC seconds so the frontend poll can't miss it
-        self.alert_sustained_frames = 0          # consecutive Alert frames
-        self.TOAST_ALERT_FRAMES     = 15         # ~0.5s at 30fps → trigger toast
-        self.was_alert_last_frame   = False
-        self.last_toast_time        = 0
-        self.TOAST_COOLDOWN         = 15         # seconds between toasts
-        self.toast_latch            = False      # stays True for TOAST_LATCH_SEC
-        self.toast_latch_until      = 0          # timestamp when latch expires
-        self.TOAST_LATCH_SEC        = 3.0        # hold toast flag for 3 seconds
+        # -------------------------------------------------------
+        # Toast Event Counter
+        # -------------------------------------------------------
+        # Counts confirmed drowsiness events (any mix of eye + yawn).
+        # Rules:
+        #   +1 when status transitions INTO Alert (eye closure event)
+        #   +1 when a yawn is confirmed (yawn_detected rising edge)
+        #   Every 3 events -> fire toast, counter resets to 0
+        #   Next toast also needs exactly 3 fresh events (cool-off by count)
+        #
+        # MIN_EVENT_GAP_SEC: minimum seconds between any two counted events
+        #   so a rapid burst of yawns cannot stack 3 events instantly.
+        #   Each event must be at least 5s apart to count as a new one.
+        self.toast_event_count     = 0       # events since last toast
+        self.TOAST_EVENT_THRESHOLD = 3       # fire toast every N events
+        self.prev_was_alert        = False   # edge-detect: Alert rising edge
+        self.prev_yawn_detected    = False   # edge-detect: yawn rising edge
+        self.last_event_time       = 0       # timestamp of last counted event
+        self.MIN_EVENT_GAP_SEC     = 5       # min seconds between counted events
+        self.toast_latch           = False   # stays True for TOAST_LATCH_SEC
+        self.toast_latch_until     = 0       # timestamp when latch expires
+        self.TOAST_LATCH_SEC       = 3.0     # hold toast flag 3s so poll can't miss it
 
 
     # ---------------------------------------------------
@@ -193,30 +205,21 @@ class DrowsinessDetector:
 
 
         # ---------------------------------------------------
-        # Visual Alert Overlay + Toast (sustained-alert trigger)
+        # Visual Alert Overlay
         # ---------------------------------------------------
 
         import time as _time
 
         current_status = alert_info["status"]
         is_alert_now   = current_status == "Alert"
-        is_warning_now = current_status == "Warning"
         now            = _time.time()
 
-        # Count consecutive Alert frames
+        # Red overlay + text ONLY for Alert. No yellow warning overlay on video.
         if is_alert_now:
-            self.alert_sustained_frames += 1
-        else:
-            self.alert_sustained_frames = 0  # reset when Alert clears
-
-        # Draw overlay immediately when status is Alert or Warning
-        if is_alert_now or is_warning_now:
-            overlay     = annotated_frame.copy()
-            color       = (0, 0, 255) if is_alert_now else (0, 165, 255)  # red or orange
-            cv2.rectangle(overlay, (0, 0), (width, height), color, -1)
+            overlay = annotated_frame.copy()
+            cv2.rectangle(overlay, (0, 0), (width, height), (0, 0, 255), -1)
             annotated_frame = cv2.addWeighted(annotated_frame, 0.75, overlay, 0.25, 0)
-
-            text = "DROWSINESS DETECTED!" if is_alert_now else "DROWSINESS WARNING!"
+            text = "DROWSINESS DETECTED!"
             (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 3)
             cv2.putText(
                 annotated_frame, text,
@@ -224,26 +227,41 @@ class DrowsinessDetector:
                 cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3
             )
 
-            # Fire toast after TOAST_ALERT_FRAMES consecutive Alert frames (Alert only)
-            # (~1.7s at 30fps) and respect cooldown between toasts
-            if (self.alert_sustained_frames >= self.TOAST_ALERT_FRAMES and
-                    (now - self.last_toast_time) >= self.TOAST_COOLDOWN):
-                self.toast_latch            = True
-                self.toast_latch_until      = now + self.TOAST_LATCH_SEC
-                self.last_toast_time        = now
-                self.alert_sustained_frames = 0   # reset so next toast needs another ~1.7s
+        # ---------------------------------------------------
+        # Toast Event Counter (any mix of eye Alert + yawn = 3 -> toast)
+        # ---------------------------------------------------
+        # Rising edge detection — a sustained Alert or held yawn counts as
+        # ONE event, not one per frame.
+        # MIN_EVENT_GAP_SEC (5s) prevents a rapid burst of yawns from
+        # stacking 3 events back-to-back in a few seconds.
 
-        # Latch: keep trigger_toast=True for 2 seconds so 500ms poll can't miss it
+        alert_rising_edge = is_alert_now and not self.prev_was_alert
+        yawn_rising_edge  = (yawn_data.get("yawn_detected", False) and
+                             not self.prev_yawn_detected)
+
+        if alert_rising_edge or yawn_rising_edge:
+            if (now - self.last_event_time) >= self.MIN_EVENT_GAP_SEC:
+                self.toast_event_count += 1
+                self.last_event_time    = now
+
+                if self.toast_event_count >= self.TOAST_EVENT_THRESHOLD:
+                    # Fire toast — reset so next toast needs 3 more fresh events
+                    self.toast_latch       = True
+                    self.toast_latch_until = now + self.TOAST_LATCH_SEC
+                    self.toast_event_count = 0
+
+        # Update edge-detection state for next frame
+        self.prev_was_alert     = is_alert_now
+        self.prev_yawn_detected = yawn_data.get("yawn_detected", False)
+
+        # Latch: hold trigger_toast=True for TOAST_LATCH_SEC so 500ms poll never misses it
         if self.toast_latch:
-            if now < self.toast_latch_until:
-                trigger_toast = True
-            else:
-                trigger_toast    = False
+            trigger_toast = now < self.toast_latch_until
+            if not trigger_toast:
                 self.toast_latch = False
         else:
             trigger_toast = False
 
-        self.was_alert_last_frame   = is_alert_now
         alert_info["trigger_toast"] = trigger_toast
 
 
@@ -299,12 +317,13 @@ class DrowsinessDetector:
         self.alert_manager.reset()
         self.eye_tracker.reset()
         self.yawn_detector.reset()
-        self.frame_count            = 0
-        self.alert_sustained_frames = 0
-        self.was_alert_last_frame   = False
-        self.last_toast_time        = 0
-        self.toast_latch            = False
-        self.toast_latch_until      = 0
+        self.frame_count           = 0
+        self.toast_event_count     = 0
+        self.prev_was_alert        = False
+        self.prev_yawn_detected    = False
+        self.last_event_time       = 0
+        self.toast_latch           = False
+        self.toast_latch_until     = 0
 
 
     # ---------------------------------------------------

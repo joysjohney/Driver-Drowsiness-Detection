@@ -82,9 +82,7 @@ def insert_status(status, drowsiness_score, ear, mar,
 
     with sqlite3.connect(DB_PATH) as conn:
 
-        # Remove old data
-        conn.execute("DELETE FROM driver_status")
-
+        # Insert new record (keep last 200 rows for history, never wipe all)
         conn.execute("""
         INSERT INTO driver_status
         (timestamp, status, drowsiness_score, ear, mar,
@@ -100,6 +98,16 @@ def insert_status(status, drowsiness_score, ear, mar,
             yawn_count,
             alert_count
         ))
+
+        # Keep only the latest 200 rows so the DB doesn't grow forever
+        conn.execute("""
+        DELETE FROM driver_status
+        WHERE id NOT IN (
+            SELECT id FROM driver_status
+            ORDER BY timestamp DESC
+            LIMIT 200
+        )
+        """)
 
         conn.commit()
 
